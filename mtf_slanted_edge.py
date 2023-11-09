@@ -39,7 +39,7 @@ def handle_roi(img):
     for idx, row in enumerate(img[::2]):
         i = idx*2
         if max(row) - min(row) < 100:
-            print(f"row {i} discarded, contrast too low!")
+            # print(f"row {i} discarded, contrast too low!")
             continue
         y_smooth = gaussian_filter(row, sigma=1)
         gradient = np.gradient(y_smooth)
@@ -49,10 +49,10 @@ def handle_roi(img):
         try:
             params, cov = curve_fit(sigmoid, range(width), row, p0=initial_params)
             if cov[2][2] > 6e-2:
-                print(f"row {i} discarded, fit failed! [l covariance too high]")
+                # print(f"row {i} discarded, fit failed! [l covariance too high]")
                 continue
         except:
-            print(f"row {i} discarded, fit failed!")
+            # print(f"row {i} discarded, fit failed!")
             continue
         # print(params)
         inf_pt = -params[3]
@@ -65,9 +65,9 @@ def handle_roi(img):
         ax1.plot(inf_pt, i, 'bx')
         line_x.append(inf_pt)
         line_y.append(i)
-        print(f"row {i} edge at {inf_pt}")
+        # print(f"row {i} edge at {inf_pt}")
     # ax2.plot(range(width), gradient, 'r-')
-    if line_x.size == 0 or line_y.size == 0:
+    if len(line_x) == 0 or len(line_y) == 0:
         print("No edge found!")
         return -1
 
@@ -112,34 +112,76 @@ def handle_roi(img):
     # fig.show()
     return freq_against_mtf(0.5)
 
-def detectROI(thresh_img):
-    contours, hierarchy = cv.findContours(thresh_img, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
+def detectROIs(imageStr):
+    image = cv.imread(imageStr, cv.IMREAD_GRAYSCALE)
+    thresh = cv.threshold(image, 0, 255, cv.THRESH_BINARY+cv.THRESH_OTSU)[1]
+    contours, hierarchy = cv.findContours(thresh, cv.RETR_CCOMP, cv.CHAIN_APPROX_SIMPLE)
     contours = sorted([
         contour for idx, contour in enumerate(contours)
-        if hierarchy[0][idx][3] > 0
+        if hierarchy[0][idx][3] != -1
     ], key=cv.contourArea, reverse=True)
     if len(contours) == 0:
+        print("no contours")
         return None
-    
+
+    epsilon = 0.04 * cv.arcLength(contours[0], True)
+    verts = cv.approxPolyDP(contours[0], epsilon, True)
+    if len(verts) != 4:
+        print("not a rectangle", "verts:", len(verts))
+        return None
+    verts = sorted(verts, key=lambda x: x[0][0])
+    lines = [
+        [v[0] for v in sorted(verts[:2], key=lambda x: x[0][1])],
+        [v[0] for v in sorted(verts[2:], key=lambda x: x[0][1])]
+    ]
+    rois = []
+    for line in lines:
+        x_center = (line[0][0] + line[1][0])//2
+        x_padding, y_padding = 30, 30
+        rois.append(
+            image[line[0][1]+y_padding:line[1][1]-y_padding,line[0][0]-x_padding:line[1][0]+x_padding]
+        )
+    return rois
+
+def calculate_mtf50(img_path):
+    rois = detectROIs(img_path)
+    if rois is None:
+        print("no rois")
+        return None
+    mtf = handle_roi(rois[0])
+
+
+    return mtf > 0.15
 
 if __name__ == '__main__':
-    ImageFile = "imgs/24.png"
-    image = cv.imread(ImageFile, cv.IMREAD_GRAYSCALE)
+    ImageFile = "imgs/19.png"
+    # image = cv.imread(ImageFile, cv.IMREAD_GRAYSCALE)
+    # _, thresh = cv.threshold(image, 0, 255, cv.THRESH_BINARY+cv.THRESH_OTSU)
+    rois = detectROIs(ImageFile)
+    print(handle_roi(rois[0]))
+    # if rois is None:
+    #     print("no rois")
+    #     exit()
+    # for roi in rois:
+    #     mtf = handle_roi(roi)
+    #     print(mtf)
+    # plt.imshow(rois[1], cmap='gray')
+    # plt.show()
     # gaussian blur
     # image = cv.GaussianBlur(image, (3,3), 0)
 
-    handler = ROISelector(image, handle_roi)
+    # handler = ROISelector(image, handle_roi)
     
-    fig, ax = plt.subplots()
-    plt.imshow(image, cmap='gray')
-    selector = RectangleSelector(ax, 
-                                 handler.select_callback,
-                                 useblit=True,
-                                 button=[1,3],
-                                 minspanx=5,
-                                 minspany=5,
-                                 spancoords='pixels',
-                                 interactive=True)
-    # mtf = Mtf(ImageFile)
-    plt.connect('key_press_event', handler.key_callback)
-    plt.show()
+    # fig, ax = plt.subplots()
+    # plt.imshow(image, cmap='gray')
+    # selector = RectangleSelector(ax, 
+    #                              handler.select_callback,
+    #                              useblit=True,
+    #                              button=[1,3],
+    #                              minspanx=5,
+    #                              minspany=5,
+    #                              spancoords='pixels',
+    #                              interactive=True)
+    # # mtf = Mtf(ImageFile)
+    # plt.connect('key_press_event', handler.key_callback)
+    # plt.show()

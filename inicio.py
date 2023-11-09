@@ -3,7 +3,6 @@ import os
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-import os
 import pandas as pd
 import math
 import mtf_slanted_edge
@@ -26,10 +25,8 @@ if uploaded_files:
             f.write(uploaded_file.read())
     st.success(f"Saved all files sucessfull.")
 
-def calculate_nitidez(image_path):
-    #calcular nitidez
-
-    return True
+#calcular nitidez
+# en archivo mtf_slanted_edge.py
 
 # Calcular la intensidad promedio en los canales R, G y B
 def getImageIntensity(imagePath):
@@ -111,6 +108,9 @@ def calculate_centrado(img):
         else:
             # This is an internal contour
             cv2.drawContours(img, [contour], -1, (0, 0, 255), 2)
+    
+    contour = sorted(contours, key=cv2.contourArea, reverse=True)[0]
+
     # Calculate the bounding box for the contour
     x, y, w, h = cv2.boundingRect(contour)
 
@@ -194,7 +194,7 @@ if uploaded_files:
 
     # List of parameter calculation functions
     parameter_functions = [
-        calculate_nitidez,
+        mtf_slanted_edge.calculate_mtf50,
         calculate_red_intensity,
         calculate_green_intensity,
         calculate_blue_intensity,
