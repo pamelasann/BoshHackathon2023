@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import math
+import mtf_slanted_edge
 
 st.header("TEST IMAGES")
 st.write("¡Bienvenido a nuestra interfaz de prueba de imágenes! Selecciona una sección dentro del sidebar para empezar.")
