@@ -11,6 +11,7 @@ st.header("TEST IMAGES")
 st.write("¡Bienvenido a nuestra interfaz de prueba de imágenes! Selecciona una sección dentro del sidebar para empezar.")
 
 dropped_images_folder = "DroppedImages"
+
 os.makedirs(dropped_images_folder, exist_ok=True)
 
 # File uploader
@@ -22,11 +23,11 @@ if uploaded_files:
         file_path = os.path.join(dropped_images_folder, uploaded_file.name)
         with open(file_path, "wb") as f:
             f.write(uploaded_file.read())
-        st.success(f"Saved file: {file_path}")
+    st.success(f"Saved all files sucessfull.")
 
 def calculate_nitidez(image_path):
-    # Replace this with your actual implementation for Nitidez
-    # For demonstration purposes, the function always returns True
+    #calcular nitidez
+
     return True
 
 # Calcular la intensidad promedio en los canales R, G y B
@@ -88,7 +89,6 @@ def calculate_blue_intensity(image_path):
     return a
 
 def calculate_centrado(img):
-
     img = cv2.imread(img)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     _, thresh = cv2.threshold(gray, 100, 255, cv2.THRESH_OTSU)
@@ -176,7 +176,7 @@ def calculate_orientacion(img, crop_margin=(3, 20)):
     return (False)
 
 # Display results table
-st.header("Results Page")
+st.header("Resultados")
 if uploaded_files:
     # Get a list of image names from the "DroppedImages" folder
     dropped_images_folder = "DroppedImages"
@@ -209,4 +209,4 @@ if uploaded_files:
     # Display the table
     st.table(table_data)
 else:
-    st.write("No images uploaded.")
+    st.write("No hay imagenes para desplegar. Por favor, ingresar imágenes para mostrar resultados.")
